@@ -1,9 +1,11 @@
 module Main where
 
+
 {-| A simple Haskell CLI application
     which can perform a number of
     manipulations on a deck of cards.
 -}
+
 
 import Data.List(isInfixOf)
 import Data.List.Split
@@ -33,11 +35,10 @@ main = do
 
 -- MAIN FUNCTIONS
 
+
 greetInit :: Deck -> IO ()
 greetInit deck = do
-    setSGR [ SetConsoleIntensity BoldIntensity ]
-    putStrLn "Hello there, what's your name?"
-    setSGR [ Reset ]
+    boldText "Hello there, what's your name?"
     name <- getLine
     putStrLn $
         "\nHello, "
@@ -47,57 +48,61 @@ greetInit deck = do
         ++ ". Here is our deck:"
     print deck
 
+
 checkDeckContains :: Deck -> IO ()
 checkDeckContains deck = do
-    setSGR [ SetConsoleIntensity BoldIntensity ]
-    putStrLn ("\nCheck if your deck contains card:")
-    setSGR [ Reset ]
+    boldText "\nCheck if your deck contains card:"
     card <- getLine
 
     if (deckContains deck card) then
-        putStrLn $
-            setSGRCode [SetColor Foreground Vivid Green]
-            ++ "Hooray! 🎉 That's a valid card."
+        successText "Hooray! 🎉 That's a valid card."
 
     else
-        putStrLn $
-            setSGRCode [SetColor Foreground Vivid Red]
-            ++ "Uh oh! You've entered an invalid card."
+        errorText "Uh oh! You've entered an invalid card."
 
     setSGR [Reset]
 
 
 readyToPlay :: IO ()
 readyToPlay = do
-    setSGR [ SetConsoleIntensity BoldIntensity ]
-    putStrLn "Are you ready to play? (y/n)"
-    setSGR [ Reset ]
+    boldText "Are you ready to play? (y/n)"
     ready <- getLine
 
     if ready == "yes" || ready == "YES" || ready == "y" || ready == "Y" then
         do
-        putStrLn "\nReady! Let's go."
+        let splitDeck = createHand 7
+            myHand = head splitDeck
 
-        setSGR [ SetConsoleIntensity BoldIntensity ]
-        putStrLn "\nEnter which card number you want to use (1-7)"
-        setSGR [ Reset ]
+        boldText "\nReady! Let's go."
+        boldText "\nYour allocated hand:"
+
+        -- show current hand
+        print myHand
+        boldText "\nEnter which card number you want to use (1-7)"
         position <- getLine
 
-        let positionInt = read position
-        if isInfixOf "Clubs" (play positionInt) then
-            putStrLn $ play positionInt ++ " ♣"
-        else if isInfixOf "Spades" (play positionInt) then
-                putStrLn $ play positionInt ++ " ♠︎"
-        else if isInfixOf "Hearts" (play positionInt) then
-                putStrLn $ play positionInt ++ " ♥︎"
+        boldText "\nSelected card:"
+
+        let
+            positionInt = read position
+            result = play splitDeck positionInt
+
+        if isInfixOf "Clubs" result then
+            putStrLn $ result ++ " ♣"
+
+        else if isInfixOf "Spades" result then
+            putStrLn $ result ++ " ♠︎"
+
+        else if isInfixOf "Hearts" result then
+            putStrLn $ result ++ " ♥︎"
+
         else
-            putStrLn $ play positionInt ++ " ♦︎"
+            putStrLn $ result ++ " ♦︎"
 
     else if ready == "no" || ready == "NO" || ready == "n" || ready == "N" then
         putStrLn "Aw, okay maybe next time."
 
-    else
-        do
+    else do
         putStrLn "Please enter yes or no (y/n/Y/N)."
         readyToPlay
 
@@ -108,6 +113,29 @@ exitApp =
 
 
 -- HELPER FUNCTIONS
+
+successText :: String -> IO ()
+successText text =
+    putStrLn $
+        setSGRCode [ SetColor Foreground Vivid Green ]
+        ++ text
+        ++ setSGRCode [ Reset ]
+
+
+errorText :: String -> IO ()
+errorText text =
+    putStrLn $
+        setSGRCode [ SetColor Foreground Vivid Red ]
+        ++ text
+        ++ setSGRCode [ Reset ]
+
+
+boldText :: String -> IO ()
+boldText text =
+    putStrLn $
+        setSGRCode [ SetConsoleIntensity BoldIntensity ]
+        ++ text
+        ++ setSGRCode [ Reset ]
 
 
 deckContains :: Deck -> String -> Bool
@@ -139,8 +167,7 @@ createHand handSize =
 playCard :: [Deck] -> Int -> String
 playCard hand position =
     let
-        myHand =
-            head hand
+        myHand = head hand
     in
     if position <= length myHand  then
         myHand !! (position - 1)
@@ -152,10 +179,6 @@ playCard hand position =
 -- PLAY STARTER
 
 
-play :: Int -> String
-play position =
-    let
-        deck =
-            createHand 7
-    in
-    playCard deck position
+play :: [Deck] -> Int -> String
+play hand position =
+    playCard hand position
